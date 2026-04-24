@@ -5,7 +5,9 @@ import com.test.koursup.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.*;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -27,14 +29,19 @@ public class SecurityConfig {
     private final UserService userService;
     private final CorsConfigurationSource corsConfigurationSource;
 
+
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
             throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .cors(cors -> cors
+                        .configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/dashboard/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/documents/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -54,7 +61,8 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userService);
+        DaoAuthenticationProvider provider =
+                new DaoAuthenticationProvider(userService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }

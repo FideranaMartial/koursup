@@ -23,4 +23,5 @@ public class DocumentResponse {
     private String auteurNom;
     private String auteurPrenom;
     private LocalDateTime createdAt;
+    private String auteurEmail;
 }

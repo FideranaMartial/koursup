@@ -2,12 +2,14 @@ package com.test.koursup.document;
 
 import com.test.koursup.document.dto.DocumentRequest;
 import com.test.koursup.document.dto.DocumentResponse;
+import com.test.koursup.rating.RatingRepository;
 import com.test.koursup.user.User;
 import com.test.koursup.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -15,12 +17,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import java.nio.file.Files;
+
 @Service
 @RequiredArgsConstructor
 public class DocumentService {
 
     private final DocumentRepository documentRepository;
     private final UserRepository userRepository;
+    private final RatingRepository ratingRepository;
 
     private final String uploadDir = "uploads/";
 
@@ -31,13 +36,12 @@ public class DocumentService {
         User auteur = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        // Créer le dossier uploads s'il n'existe pas
+
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
 
-        // Générer un nom unique pour le fichier
         String nomUnique = UUID.randomUUID() + "_" + fichier.getOriginalFilename();
         Path cheminFichier = uploadPath.resolve(nomUnique);
         Files.copy(fichier.getInputStream(), cheminFichier,
@@ -58,7 +62,6 @@ public class DocumentService {
 
         documentRepository.save(document);
 
-        // Ajouter du karma à l'auteur
         auteur.setKarma(auteur.getKarma() + 10);
         userRepository.save(auteur);
 
@@ -100,14 +103,17 @@ public class DocumentService {
         return toResponse(document);
     }
 
-    public Path telecharger(Long id) {
+    public void incrementerTelechargement(Long id) {
         Document document = documentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Document non trouvé"));
-
         document.setNombreTelechargements(
                 document.getNombreTelechargements() + 1);
         documentRepository.save(document);
+    }
 
+    public Path getFichier(Long id) {
+        Document document = documentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Document non trouvé"));
         return Paths.get(document.getCheminFichier());
     }
 
@@ -144,8 +150,10 @@ public class DocumentService {
                 .nombreNotes(d.getNombreNotes())
                 .auteurNom(d.getAuteur().getNom())
                 .auteurPrenom(d.getAuteur().getPrenom())
+                .auteurEmail(d.getAuteur().getEmail())
                 .createdAt(d.getCreatedAt())
                 .build();
+
     }
 
     public Page<DocumentResponse> filtrer(String filiere, String niveau,
@@ -163,5 +171,31 @@ public class DocumentService {
 
         return documentRepository.filtrer(filiereParam, niveauParam, typeDoc, pageable)
                 .map(this::toResponse);
+    }
+    @Transactional
+    public void supprimer(Long id, String email) {
+        Document document = documentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Document non trouvé"));
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        if (!document.getAuteur().getId().equals(user.getId())) {
+            throw new RuntimeException("Non autorisé");
+        }
+
+        ratingRepository.deleteByDocumentId(id);
+
+        try {
+            Files.deleteIfExists(Paths.get(document.getCheminFichier()));
+        } catch (IOException e) {
+            System.out.println("Fichier introuvable sur le disque");
+        }
+
+        User auteur = document.getAuteur();
+        auteur.setKarma(Math.max(0, auteur.getKarma() - 10));
+        userRepository.save(auteur);
+
+        documentRepository.delete(document);
     }
 }

@@ -17,4 +17,5 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
 
     // Compte le nombre de notes d'un document
     int countByDocumentId(Long documentId);
+    void deleteByDocumentId(Long documentId);
 }

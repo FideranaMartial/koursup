@@ -5,6 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -26,5 +29,23 @@ public class UserController {
                 user.getFiliere(),
                 user.getNiveau()
         ));
+    }
+
+    @GetMapping("/classement")
+    public ResponseEntity<List<UserResponse>> getClassement() {
+        List<User> users = userRepository.findTop10ByOrderByKarmaDesc();
+        List<UserResponse> classement = users.stream()
+                .map(u -> new UserResponse(
+                        u.getId(),
+                        u.getNom(),
+                        u.getPrenom(),
+                        u.getEmail(),
+                        u.getKarma(),
+                        u.getRole().name(),
+                        u.getFiliere(),
+                        u.getNiveau()
+                ))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(classement);
     }
 }

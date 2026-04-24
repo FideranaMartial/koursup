@@ -4,6 +4,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Documents from './pages/Documents';
 import { useAuth } from './context/AuthContext';
+import Classement from './pages/Classement';
+import Dashboard from './pages/Dashboard';
 
 const PrivateRoute = ({ children }) => {
     const { user, loading } = useAuth();
@@ -24,7 +26,13 @@ export default function App() {
                 <Route path="/documents" element={
                     <PrivateRoute><Documents /></PrivateRoute>
                 } />
+                <Route path="/classement" element={
+                <PrivateRoute><Classement /></PrivateRoute>
+                } />
                 <Route path="*" element={<Navigate to="/login" />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/" element={<Navigate to="/login" />} />
+               
             </Routes>
         </BrowserRouter>
     );

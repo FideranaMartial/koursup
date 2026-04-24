@@ -39,4 +39,13 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
             @Param("type") TypeDocument type,
             Pageable pageable
     );
+
+    List<Document> findTop1ByOrderByNoteMoyenneDesc();
+
+
+    List<Document> findTop1ByOrderByNombreTelechargementsDesc();
+
+
+    @Query("SELECT COUNT(d) FROM Document d WHERE d.auteur.id = :userId")
+    int countByAuteurId(@Param("userId") Long userId);
 }
