@@ -38,6 +38,7 @@ public class User implements UserDetails {
 
     private String niveau;
 
+    @Builder.Default
     private int karma = 0;
 
     @Enumerated(EnumType.STRING)
