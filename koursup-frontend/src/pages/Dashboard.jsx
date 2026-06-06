@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';  // ← Ajout de useLocation
+import { useNavigate } from 'react-router-dom';  // ← Ajout de useLocation
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+import Navbar from '../components/Navbar';
 
 export default function Dashboard() {
     const navigate = useNavigate();
-    const location = useLocation();  // ← Ajout pour détecter la route active
-    const { user, logout } = useAuth();
+      // ← Ajout pour détecter la route active
+    const { user } = useAuth();
     const [stats, setStats] = useState({
         totalDocuments: 0,
         meilleurNote: null,
@@ -33,16 +34,6 @@ export default function Dashboard() {
         }
     };
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
-
-    // Fonction pour vérifier si un lien est actif
-    const isActive = (path) => {
-        return location.pathname === path;
-    };
-
     if (loading) {
         return (
             <div style={s.loadingContainer}>
@@ -55,48 +46,7 @@ export default function Dashboard() {
     return (
         <div style={s.page}>
             {/* Navbar */}
-            <div style={s.nav}>
-                <div style={s.logoBox}>
-                    <div style={s.logoGlow}></div>
-                    <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-                        <path d="M16 2L4 9L16 16L28 9L16 2Z" stroke="#00d4ff" strokeWidth="1.5" fill="none"/>
-                        <path d="M4 16L16 23L28 16" stroke="#00d4ff" strokeWidth="1.5" fill="none"/>
-                        <circle cx="16" cy="16" r="2" fill="#00d4ff"/>
-                    </svg>
-                    <span style={s.logo}>KoursUp</span>
-                </div>
-                <div style={s.navLinks}>
-                    {/* Ordre: Dashboard (1er) → Documents (2e) → Classement (3e) */}
-                    <span 
-                        style={{...s.navLink, ...(isActive('/dashboard') ? s.navLinkActive : {})}}
-                        onClick={() => navigate('/dashboard')}
-                    >
-                        Dashboard
-                    </span>
-                    <span 
-                        style={{...s.navLink, ...(isActive('/documents') ? s.navLinkActive : {})}}
-                        onClick={() => navigate('/documents')}
-                    >
-                        Documents
-                    </span>
-                    <span 
-                        style={{...s.navLink, ...(isActive('/classement') ? s.navLinkActive : {})}}
-                        onClick={() => navigate('/classement')}
-                    >
-                        Classement
-                    </span>
-                </div>
-                <div style={s.navRight}>
-                    <div style={s.karmaBox}>
-                        <span>⚡</span>
-                        <span style={s.karmaText}>{user?.karma || 0} pts</span>
-                    </div>
-                    <button style={s.btnLogout} onClick={handleLogout}>
-                        Déconnexion
-                    </button>
-                </div>
-            </div>
-
+            <Navbar />
             <div style={s.content}>
                 {/* Hero Section */}
                 <div style={s.heroSection}>
@@ -199,7 +149,7 @@ export default function Dashboard() {
                                     {stats.topContributeur.filiere} · {stats.topContributeur.nombreDocuments} documents
                                 </p>
                                 <div style={s.topContributorKarma}>
-                                    <span style={s.karmaIcon}>⚡</span>
+                                    <span style={s.karmaIcon}><img src="/icons8-flash-on-24.png" alt="" /></span>
                                     <span style={s.karmaValue}>{stats.topContributeur.karma} points de karma</span>
                                 </div>
                             </div>

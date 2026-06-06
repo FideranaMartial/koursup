@@ -1,9 +1,10 @@
-// Documents.jsx - Version corrigée
+/* eslint-disable react-hooks/set-state-in-effect */
+import CommentSection from '../components/CommentSection';
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { useNavigate, useLocation } from 'react-router-dom';  // ← Ajout de useLocation
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import Navbar from '../components/Navbar';
 
 const TYPE_COLORS = {
     COURS:   { bg: 'rgba(0, 212, 255, 0.05)', text: '#00d4ff', border: 'rgba(0,212,255,0.3)' },
@@ -36,6 +37,7 @@ function Etoiles({ documentId, noteMoyenne, onNote }) {
         }
     };
 
+
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {[1, 2, 3, 4, 5].map(i => (
@@ -63,6 +65,7 @@ function Etoiles({ documentId, noteMoyenne, onNote }) {
 }
 
 export default function Documents() {
+    const [commentDocId, setCommentDocId] = useState(null);
     const [apercuDoc, setApercuDoc] = useState(null);
     const [documents, setDocuments] = useState([]);
     const [keyword, setKeyword] = useState('');
@@ -77,17 +80,12 @@ export default function Documents() {
         niveau: '',
         type: ''
     });
-    const navigate = useNavigate();
-    const location = useLocation();  // ← Ajout pour détecter la route active
-    const { user, refreshUser, logout } = useAuth();
+    
+    const { user, refreshUser } = useAuth();
 
     // Fonction pour vérifier si un lien est actif
-    const isActive = (path) => {
-        return location.pathname === path;
-    };
-
-    useEffect(() => { charger(); }, []);
-
+    
+    
     const charger = async () => {
         try {
             const res = await api.get('/documents');
@@ -96,6 +94,9 @@ export default function Documents() {
             toast.error('Erreur de chargement');
         }
     };
+
+    useEffect(() => { charger(); }, []);
+
 
     const rechercher = async () => {
         if (!keyword.trim()) return charger();
@@ -137,7 +138,7 @@ export default function Documents() {
         try {
             await api.post('/documents', formData);
             await refreshUser();
-            toast.success('Document uploadé ! +10 karma ⚡');
+            toast.success('Document uploadé ! +10 karma');
             setShowUpload(false);
             setFichier(null);
             setMeta({ titre: '', description: '', filiere: '',
@@ -165,11 +166,6 @@ export default function Documents() {
         }
     };
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
-
     const supprimer = async (id) => {
     if (!window.confirm('Supprimer ce document ?')) return;
     try {
@@ -185,52 +181,7 @@ export default function Documents() {
     return (
         <div style={s.page}>
             {/* Navbar */}
-            <div style={s.nav}>
-                <div style={s.logoBox}>
-                    <div style={s.logoGlow}></div>
-                    <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-                        <path d="M16 2L4 9L16 16L28 9L16 2Z" stroke="#00d4ff" strokeWidth="1.5" fill="none"/>
-                        <path d="M4 16L16 23L28 16" stroke="#00d4ff" strokeWidth="1.5" fill="none"/>
-                        <circle cx="16" cy="16" r="2" fill="#00d4ff"/>
-                    </svg>
-                    <span style={s.logo}>KoursUp</span>
-                </div>
-                <div style={s.navLinks}>
-                    {/* Ordre: Dashboard (1er) → Documents (2e) → Classement (3e) */}
-                    <span 
-                        style={{...s.navLink, ...(isActive('/dashboard') ? s.navLinkActive : {})}}
-                        onClick={() => navigate('/dashboard')}
-                    >
-                        Dashboard
-                    </span>
-                    <span 
-                        style={{...s.navLink, ...(isActive('/documents') ? s.navLinkActive : {})}}
-                        onClick={() => navigate('/documents')}
-                    >
-                        Documents
-                    </span>
-                    <span 
-                        style={{...s.navLink, ...(isActive('/classement') ? s.navLinkActive : {})}}
-                        onClick={() => navigate('/classement')}
-                    >
-                        Classement
-                    </span>
-                </div>
-                <div style={s.navRight}>
-                    <div style={s.karmaBox}>
-                        <span style={s.karmaIcon}>⚡</span>
-                        <span style={s.karmaText}>{user?.karma || 0} pts</span>
-                    </div>
-                    <span style={s.userName}>{user?.prenom} {user?.nom}</span>
-                    <button style={s.btnShare}
-                            onClick={() => setShowUpload(!showUpload)}>
-                        Partager
-                    </button>
-                    <button style={s.btnLogout} onClick={handleLogout}>
-                        Déconnexion
-                    </button>
-                </div>
-            </div>
+            <Navbar></Navbar>
 
             {/* Upload Form */}
             {showUpload && (
@@ -345,77 +296,97 @@ export default function Documents() {
                 <p style={s.resultCount}>{documents.length} document(s) trouvé(s)</p>
             </div>
 
-            {/* Grid documents */}
-            <div style={s.grid}>
-                {documents.length === 0 ? (
-                    <div style={s.emptyBox}>
-                        <p style={s.emptyIcon}>📚</p>
-                        <p style={s.emptyText}>Aucun document trouvé</p>
-                        <p style={s.emptySubText}>
-                            Sois le premier à partager un cours !
-                        </p>
-                    </div>
-                ) : documents.map(doc => {
+            {/* Grid documents - CORRIGÉ */}
+        <div style={s.grid}>
+            {documents.length === 0 ? (
+                <div style={s.emptyBox}>
+                    <p style={s.emptyIcon}>📚</p>
+                    <p style={s.emptyText}>Aucun document trouvé</p>
+                    <p style={s.emptySubText}>
+                        Sois le premier à partager un cours !
+                    </p>
+                </div>
+            ) : (
+                documents.map(doc => {
                     const colors = TYPE_COLORS[doc.type] || TYPE_COLORS.AUTRE;
+                    const showComments = commentDocId === doc.id;
+                    
                     return (
-                        <div key={doc.id} style={{...s.card, background: colors.bg, border: `1px solid ${colors.border}`}}>
-                            <div style={{...s.typeBadge, color: colors.text,
-                                        border: `1px solid ${colors.border}`}}>
-                                {doc.type}
+                        <div key={doc.id} style={s.documentContainer}>
+                            {/* Carte du document */}
+                            <div style={{...s.card, background: colors.bg, border: `1px solid ${colors.border}`}}>
+                                <div style={{...s.typeBadge, color: colors.text,
+                                            border: `1px solid ${colors.border}`}}>
+                                    {doc.type}
+                                </div>
+                                <h3 style={s.cardTitle}>{doc.titre}</h3>
+                                <div style={s.cardTags}>
+                                    <span style={s.tag}>{doc.filiere}</span>
+                                    <span style={s.tag}>{doc.niveau}</span>
+                                    <span style={s.tag}>{doc.matiere}</span>
+                                </div>
+                                {doc.description && (
+                                    <p style={s.cardDesc}>{doc.description}</p>
+                                )}
+                                <div style={s.cardStats}>
+                                    <Etoiles
+                                        documentId={doc.id}
+                                        noteMoyenne={doc.noteMoyenne}
+                                        onNote={charger}
+                                    />
+                                    <span style={s.stat}>⬇ {doc.nombreTelechargements}</span>
+                                    <span style={s.statAuteur}>
+                                        {doc.auteurPrenom} {doc.auteurNom}
+                                    </span>
+                                </div>
+                                
+                                {/* Boutons action */}
+                                <div style={s.btnGroup}>
+                                    <button
+                                        style={{...s.btnAction, color: colors.text,
+                                                border: `1px solid ${colors.text}44`}}
+                                        onClick={() => telecharger(doc.id, doc.nomFichier)}>
+                                        Télécharger
+                                    </button>
+                                    <button
+                                        style={{...s.btnAction, color: '#a5b4fc',
+                                                border: '1px solid #a5b4fc44'}}
+                                        onClick={() => setCommentDocId(showComments ? null : doc.id)}>
+                                        {showComments ? 'Masquer' : 'Commentaires'}
+                                    </button>
+                                    {doc.auteurEmail === user?.email && (
+                                        <button
+                                            style={{...s.btnAction, color: '#f87171',
+                                                    border: '1px solid #f8717144'}}
+                                            onClick={() => supprimer(doc.id)}>
+                                            Supprimer
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                            <h3 style={s.cardTitle}>{doc.titre}</h3>
-                            <div style={s.cardTags}>
-                                <span style={s.tag}>{doc.filiere}</span>
-                                <span style={s.tag}>{doc.niveau}</span>
-                                <span style={s.tag}>{doc.matiere}</span>
-                            </div>
-                            {doc.description && (
-                                <p style={s.cardDesc}>{doc.description}</p>
-                            )}
-                            <div style={s.cardStats}>
-                                <Etoiles
-                                    documentId={doc.id}
-                                    noteMoyenne={doc.noteMoyenne}
-                                    onNote={charger}
-                                />
-                                <span style={s.stat}>⬇ {doc.nombreTelechargements}</span>
-                                <span style={s.statAuteur}>
-                                    {doc.auteurPrenom} {doc.auteurNom}
-                                </span>
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                
-                <button
-                    style={{...s.btnDl, color: colors.text,
-                            border: `1px solid ${colors.text}44`,
-                            flex: 1}}
-                    onClick={() => telecharger(doc.id, doc.nomFichier)}>
-                    Télécharger
-                </button>
-                {doc.auteurEmail === user?.email && (
-        <button
-            style={{...s.btnDl, color: '#f87171',
-                    border: '1px solid #f8717144', flex: 1}}
-            onClick={() => supprimer(doc.id)}>
-            Supprimer
-        </button>
-    )}
-            </div>
 
                             
+                            {showComments && (
+                                <div style={s.commentWrapper}>
+                                    <CommentSection documentId={doc.id} />
+                                </div>
+                            )}
                         </div>
                     );
-                })}
-            </div>
-            {apercuDoc && (
-    <ApercuPDF
-        documentId={apercuDoc.id}
-        nomFichier={apercuDoc.nomFichier}
-        onClose={() => setApercuDoc(null)}
-    />
-)}
+                })
+            )}
         </div>
-    );
+                    
+        {/* Aperçu PDF */}
+        {apercuDoc && (
+            <ApercuPDF
+                documentId={apercuDoc.id}
+                nomFichier={apercuDoc.nomFichier}
+                onClose={() => setApercuDoc(null)}
+            />
+        )}
+    </div>
+);
 }
 
 const s = {
@@ -514,4 +485,68 @@ const s = {
                   padding: '9px 16px', borderRadius: '10px',
                   cursor: 'pointer', fontSize: '13px', fontWeight: '600',
                   fontFamily: 'Space Grotesk, sans-serif' },
+    btnGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    marginTop: '10px'
+},
+btnAction: {
+    width: '100%',
+    padding: '8px',
+    background: 'transparent',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '500',
+    textAlign: 'center'
+},
+commentWrapper: {
+    gridColumn: '1 / -1',
+    background: '#16161f',
+    borderRadius: '14px',
+    border: '1px solid #2a2a3a',
+    padding: '20px',
+},
+documentContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%'
+    },
+     profileBubble: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 150, 200, 0.05))',
+        padding: '5px 15px 5px 8px',
+        borderRadius: '40px',
+        border: '1px solid rgba(0, 212, 255, 0.3)',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        marginRight: '8px',
+        ':hover': {
+            background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.25), rgba(0, 150, 200, 0.1))',
+            borderColor: '#00d4ff',
+            boxShadow: '0 0 10px rgba(0, 212, 255, 0.2)'
+        }
+    },
+    profileAvatar: {
+        width: '32px',
+        height: '32px',
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #00d4ff, #0099cc)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '14px',
+        fontWeight: '700',
+        color: '#0a0a0f',
+        textTransform: 'uppercase'
+    },
+    profileName: {
+        fontSize: '13px',
+        fontWeight: '500',
+        color: '#e2e2e2',
+        whiteSpace: 'nowrap'
+    },
 };

@@ -48,8 +48,19 @@ export default function Navbar() {
                 </span>
             </div>
             <div style={styles.navRight}>
+                <div style={styles.userInfo} onClick={() => navigate('/profil')}>
+        <div style={styles.userAvatar}>
+            {user?.prenom?.[0]}{user?.nom?.[0]}
+        </div>
+        <div>
+            <div style={styles.userName}>
+                {user?.prenom} {user?.nom}
+            </div>
+        </div>
+    </div>
+
                 <div style={styles.karmaBox}>
-                    <span>⚡</span>
+                    <img src="/icons8-flash-on-24.png" alt="karma" />
                     <span style={styles.karmaText}>{user?.karma || 0} pts</span>
                 </div>
                 <button style={styles.btnLogout} onClick={handleLogout}>
@@ -137,5 +148,35 @@ const styles = {
         cursor: 'pointer', 
         fontSize: '13px', 
         fontFamily: 'Space Grotesk, sans-serif' 
-    }
+    },
+    userInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    cursor: 'pointer',
+    padding: '6px 12px',
+    borderRadius: '10px',
+    border: '1px solid rgba(0,212,255,0.15)',
+    background: 'rgba(0,212,255,0.05)',
+    transition: 'all 0.2s'
+},
+userAvatar: {
+    width: '34px',
+    height: '34px',
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg, #00d4ff, #7b2fff)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    fontWeight: '700',
+    color: 'white',
+    flexShrink: 0
+},
+userName: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#e2e2e2',
+    lineHeight: '1.2'
+},
 };

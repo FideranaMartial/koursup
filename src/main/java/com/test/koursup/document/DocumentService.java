@@ -1,5 +1,6 @@
 package com.test.koursup.document;
 
+import com.test.koursup.comment.CommentRepository;
 import com.test.koursup.document.dto.DocumentRequest;
 import com.test.koursup.document.dto.DocumentResponse;
 import com.test.koursup.rating.RatingRepository;
@@ -16,8 +17,6 @@ import java.nio.file.*;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import java.nio.file.Files;
 
 @Service
 @RequiredArgsConstructor
@@ -172,6 +171,9 @@ public class DocumentService {
         return documentRepository.filtrer(filiereParam, niveauParam, typeDoc, pageable)
                 .map(this::toResponse);
     }
+
+    private final CommentRepository commentRepository;
+
     @Transactional
     public void supprimer(Long id, String email) {
         Document document = documentRepository.findById(id)
@@ -185,6 +187,7 @@ public class DocumentService {
         }
 
         ratingRepository.deleteByDocumentId(id);
+        commentRepository.deleteByDocumentId(id);
 
         try {
             Files.deleteIfExists(Paths.get(document.getCheminFichier()));

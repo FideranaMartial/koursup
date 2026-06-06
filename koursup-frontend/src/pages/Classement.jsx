@@ -1,10 +1,10 @@
 // Classement.jsx - Version corrigée
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { useNavigate, useLocation } from 'react-router-dom';  // ← Ajout de useLocation
 import { useAuth } from '../context/AuthContext';
+import Navbar from '../components/Navbar';
 
-const MEDALS = ['🥇', '🥈', '🥉'];
+const MEDALS = [<img src="/1st_place.png" alt="1st_place" />, <img src="/2nd_place.png" alt="2nd_place" />, <img src="/3rd_place.png" alt="3rd_place" />];
 
 const KARMA_COLORS = [
     { bg: '#0a1a1a', text: '#00d4ff', border: '#00d4ff44' },
@@ -14,14 +14,10 @@ const KARMA_COLORS = [
 
 export default function Classement() {
     const [classement, setClassement] = useState([]);
-    const navigate = useNavigate();
-    const location = useLocation();  // ← Ajout pour détecter la route active
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
 
     // Fonction pour vérifier si un lien est actif
-    const isActive = (path) => {
-        return location.pathname === path;
-    };
+    
 
     useEffect(() => {
         api.get('/users/classement')
@@ -29,58 +25,14 @@ export default function Classement() {
            .catch(() => {});
     }, []);
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
+    
 
     const monRang = classement.findIndex(u => u.email === user?.email) + 1;
 
     return (
         <div style={s.page}>
             {/* Navbar */}
-            <div style={s.nav}>
-                <div style={s.logoBox}>
-                    <div style={s.logoGlow}></div>
-                    <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-                        <path d="M16 2L4 9L16 16L28 9L16 2Z" stroke="#00d4ff" strokeWidth="1.5" fill="none"/>
-                        <path d="M4 16L16 23L28 16" stroke="#00d4ff" strokeWidth="1.5" fill="none"/>
-                        <circle cx="16" cy="16" r="2" fill="#00d4ff"/>
-                    </svg>
-                    <span style={s.logo}>KoursUp</span>
-                </div>
-                <div style={s.navLinks}>
-                    {/* Ordre: Dashboard (1er) → Documents (2e) → Classement (3e) */}
-                    <span 
-                        style={{...s.navLink, ...(isActive('/dashboard') ? s.navLinkActive : {})}}
-                        onClick={() => navigate('/dashboard')}
-                    >
-                        Dashboard
-                    </span>
-                    <span 
-                        style={{...s.navLink, ...(isActive('/documents') ? s.navLinkActive : {})}}
-                        onClick={() => navigate('/documents')}
-                    >
-                        Documents
-                    </span>
-                    <span 
-                        style={{...s.navLink, ...(isActive('/classement') ? s.navLinkActive : {})}}
-                        onClick={() => navigate('/classement')}
-                    >
-                        Classement
-                    </span>
-                </div>
-                <div style={s.navRight}>
-                    <div style={s.karmaBox}>
-                        <span style={s.karmaIcon}>⚡</span>
-                        <span style={s.karmaText}>{user?.karma || 0} pts</span>
-                    </div>
-                    <button style={s.btnLogout} onClick={handleLogout}>
-                        Déconnexion
-                    </button>
-                </div>
-            </div>
-
+            <Navbar />
             <div style={s.content}>
                 <div style={s.header}>
                     <h1 style={s.title}>Classement des contributeurs</h1>
